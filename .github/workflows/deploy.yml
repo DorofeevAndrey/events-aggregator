@@ -1,0 +1,22 @@
+name: Deploy to LMS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install deps
+        run: uv sync
+
+      - name: Run Ruff
+        run: uv run ruff check .
