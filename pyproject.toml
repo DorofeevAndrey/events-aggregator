@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.135.3",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
     "uvicorn>=0.44.0",
 ]
 
@@ -19,4 +21,4 @@ line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "N", "Q", "S", "T", "W"]
