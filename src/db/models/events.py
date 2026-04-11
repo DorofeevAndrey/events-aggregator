@@ -1,11 +1,14 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
-from src.db.models.places import Place
+
+if TYPE_CHECKING:
+    from src.db.models.places import Place
 
 
 class Event(Base):
