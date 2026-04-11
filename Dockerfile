@@ -17,7 +17,12 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev && \
     chown -R appuser:appuser /app/.venv
 
+ENV PATH="/app/.venv/bin:$PATH"
+
 COPY --chown=appuser:appuser . .
+
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 
 USER appuser
 
@@ -26,4 +31,4 @@ ENV UV_NO_CACHE=1
 
 EXPOSE 8000
 
-CMD ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/run.sh"]
