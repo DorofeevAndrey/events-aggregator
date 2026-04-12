@@ -1,18 +1,16 @@
-from fastapi import FastAPI
-from fastapi.params import Depends
-from sqlalchemy import literal, select
-
-from src.db.session import get_db_session
+from fastapi import FastAPI, APIRouter
+from src.api.sync import router as sync_router
 
 app = FastAPI()
 
+api_router = APIRouter(prefix="/api")
 
-@app.get("/api/health")
+
+@api_router.get("/health")
 async def health():
     return {"status": "ok"}
 
 
-@app.get("/api/health/db")
-async def health_db(session=Depends(get_db_session)):
-    await session.execute(select(literal(1)))
-    return {"status": "ok"}
+api_router.include_router(sync_router)
+
+app.include_router(api_router)
