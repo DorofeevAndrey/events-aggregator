@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
+
 from src.api.sync import router as sync_router
 
 app = FastAPI()
