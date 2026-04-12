@@ -14,6 +14,15 @@ class EventsProviderClient:
             timeout=timeout,
         )
 
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def __aenter__(self) -> "EventsProviderClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.aclose()
+
     async def events(
         self, changed_at: str, cursor: str | None = None
     ) -> dict[str, Any]:
