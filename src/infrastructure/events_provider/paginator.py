@@ -11,12 +11,16 @@ class EventsPaginator:
         self._changed_at = changed_at
         self._cursor: str | None = None
         self._buffer: list[ProviderEventSchema] = []
+        self._finished = False
 
     def __aiter__(self):
         return self
 
     async def __anext__(self) -> ProviderEventSchema:
         while not self._buffer:
+            if self._finished:
+                raise StopAsyncIteration
+
             page_data = await self._client.events(
                 changed_at=self._changed_at,
                 cursor=self._cursor,
@@ -26,7 +30,11 @@ class EventsPaginator:
             self._cursor = self._extract_cursor(page.next)
             self._buffer = page.results
 
-            if not self._buffer and self._cursor is None:
+            if self._cursor is None:
+                self._finished = True
+
+            if not self._buffer:
+                self._finished = True
                 raise StopAsyncIteration
 
         return self._buffer.pop(0)
