@@ -1,5 +1,5 @@
 from src.application.mappers.sync_events import build_event_model, build_place_model
-from application.ports.sync_events import (
+from src.application.ports.sync_events import (
     EventRepositoryPort,
     EventsProviderClientPort,
     PlaceRepositoryPort,
