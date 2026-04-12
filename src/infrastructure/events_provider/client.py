@@ -1,6 +1,6 @@
+import logging
 from typing import Any
 
-import logging
 import httpx
 
 logger = logging.getLogger(__name__)
