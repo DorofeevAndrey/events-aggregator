@@ -6,7 +6,7 @@ settings = get_settings()
 
 engine = create_async_engine(
     settings.postgres_connection_url_async,
-    echo=True,
+    echo=False,
 )
 
 AsyncSessionLocal = async_sessionmaker(
