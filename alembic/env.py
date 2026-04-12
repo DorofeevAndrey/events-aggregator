@@ -6,6 +6,7 @@ from alembic import context
 from src.db.base import Base
 from src.db.models.events import Event  # noqa: F401
 from src.db.models.places import Place  # noqa: F401
+from src.db.models.sync_state import SyncState  # noqa: F401
 from src.db.session import settings
 
 # this is the Alembic Config object, which provides

@@ -4,6 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+    )
+
+    """Database settings"""
+
     postgres_database_name: str
     postgres_host: str
     postgres_port: int
@@ -26,9 +32,10 @@ class Settings(BaseSettings):
             f"{self.postgres_port}/{self.postgres_database_name}"
         )
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-    )
+    """Events provider settings"""
+
+    events_provider_base_url: str
+    events_provider_api_key: str
 
 
 @lru_cache
