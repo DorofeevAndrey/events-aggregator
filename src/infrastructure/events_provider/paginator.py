@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-from src.events_provider.client import EventsProviderClient
+from infrastructure.events_provider.client import EventsProviderClient
 
 
 class EventsPaginator:
