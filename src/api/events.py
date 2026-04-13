@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.repositories.event_repository import EventRepository
+
 from src.application.service.events import EventsService
+from src.db.session import get_db_session
+from src.repositories.event_repository import EventRepository
 from src.schemas.events.event_query import EventQuerySchema
 from src.schemas.events.events import EventListResponseSchema
-from src.db.session import get_db_session
-
 
 router = APIRouter()
 

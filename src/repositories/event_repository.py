@@ -46,16 +46,13 @@ class EventRepository:
     async def list(
         self, date_from: date | None = None, offset: int = 0, limit: int = 20
     ) -> list[Event]:
-        query = (
-            select(Event)
-            .options(selectinload(Event.place))
-            .order_by(Event.event_time.asc(), Event.id.asc())
-            .offset(offset)
-            .limit(limit)
-        )
+        query = select(Event).options(selectinload(Event.place))
 
         if date_from is not None:
             query = query.where(Event.event_time >= date_from)
+
+        query = query.order_by(Event.event_time.asc(), Event.id.asc())
+        query = query.offset(offset).limit(limit)
 
         result = await self._session.execute(query)
         return list(result.scalars().all())

@@ -13,8 +13,8 @@ class EventsService:
         self, request: Request, date_from: date | None, page: int, page_size: int
     ):
         offset = (page - 1) * page_size
-        count = self._event_repository.count(date_from=date_from)
-        events = self._event_repository.list(
+        count = await self._event_repository.count(date_from=date_from)
+        events = await self._event_repository.list(
             date_from=date_from, offset=offset, limit=page_size
         )
 

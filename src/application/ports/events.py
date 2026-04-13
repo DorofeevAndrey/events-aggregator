@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Protocol
+
 from src.db.models.events import Event
 
 
