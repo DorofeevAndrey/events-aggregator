@@ -74,3 +74,48 @@ async def test_events_raises_http_error():
 
         with pytest.raises(httpx.HTTPStatusError):
             await client.events(changed_at="2000-01-01")
+
+
+@pytest.mark.asyncio
+async def test_seats_returns_json():
+    mock_response = Mock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {"seats": ["A1", "A2"]}
+
+    with patch(
+        "src.infrastructure.events_provider.client.httpx.AsyncClient"
+    ) as mock_async_client:
+        mock_client = mock_async_client.return_value
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        client = EventsProviderClient("https://example.com", "api-key")
+
+        result = await client.seats(event_id="550e8400-e29b-41d4-a716-446655440000")
+
+        assert result == {"seats": ["A1", "A2"]}
+
+        mock_client.get.assert_awaited_once_with(
+            url="/api/events/550e8400-e29b-41d4-a716-446655440000/seats/",
+        )
+
+
+@pytest.mark.asyncio
+async def test_seats_raises_http_error():
+    mock_response = Mock()
+    mock_response.status_code = 500
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        message="boom",
+        request=Mock(),
+        response=mock_response,
+    )
+
+    with patch(
+        "src.infrastructure.events_provider.client.httpx.AsyncClient"
+    ) as mock_async_client:
+        mock_client = mock_async_client.return_value
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        client = EventsProviderClient("https://example.com", "api-key")
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await client.seats(event_id="550e8400-e29b-41d4-a716-446655440000")
