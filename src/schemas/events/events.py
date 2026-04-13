@@ -38,3 +38,7 @@ class EventListResponseSchema(BaseModel):
     next: str | None
     previous: str | None
     results: list[EventListSchema]
+
+
+class EventSeatsResponseSchema(BaseModel):
+    seats: list[str]
