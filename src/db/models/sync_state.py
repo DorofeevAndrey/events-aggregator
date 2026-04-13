@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.db.base import Base
 
 
-class SyncStatus(str, enum.Enum):
+class SyncStatus(enum.Enum):
     IDLE = "idle"
     RUNNING = "running"
     SUCCESS = "success"

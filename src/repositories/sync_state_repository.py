@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,7 +26,7 @@ class SyncStateRepository:
     async def mark_running(self) -> SyncState:
         sync_state = await self.get_or_create()
         sync_state.sync_status = SyncStatus.RUNNING
-        sync_state.last_sync_time = datetime.now(timezone.utc)
+        sync_state.last_sync_time = datetime.now(UTC)
         sync_state.error_message = None
         await self._session.commit()
         await self._session.refresh(sync_state)
@@ -35,7 +35,7 @@ class SyncStateRepository:
     async def mark_success(self, last_changed_at) -> SyncState:
         sync_state = await self.get_or_create()
         sync_state.sync_status = SyncStatus.SUCCESS
-        sync_state.last_sync_time = datetime.now(timezone.utc)
+        sync_state.last_sync_time = datetime.now(UTC)
         sync_state.last_changed_at = last_changed_at
         sync_state.error_message = None
         await self._session.commit()
@@ -45,7 +45,7 @@ class SyncStateRepository:
     async def mark_failed(self, error_message: str) -> SyncState:
         sync_state = await self.get_or_create()
         sync_state.sync_status = SyncStatus.FAILED
-        sync_state.last_sync_time = datetime.now(timezone.utc)
+        sync_state.last_sync_time = datetime.now(UTC)
         sync_state.error_message = error_message
         await self._session.commit()
         await self._session.refresh(sync_state)
