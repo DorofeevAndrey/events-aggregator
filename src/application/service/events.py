@@ -1,6 +1,7 @@
 from datetime import date
+from uuid import UUID
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from src.application.ports.events import EventRepositoryPort
 
@@ -44,3 +45,11 @@ class EventsService:
             "previous": previous_url,
             "results": events,
         }
+
+    async def get_event(self, event_id: UUID):
+        event = await self._event_repository.get_by_id(event_id=event_id)
+
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        return event
