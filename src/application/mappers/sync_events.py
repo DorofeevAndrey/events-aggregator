@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from src.db.models.events import Event
 from src.db.models.places import Place
@@ -37,7 +37,7 @@ def build_initial_sync_state() -> SyncState:
     return SyncState(
         id=1,
         last_changed_at=None,
-        last_sync_time=datetime.now(timezone.utc),
+        last_sync_time=datetime.now(datetime.UTC),
         sync_status=SyncStatus.RUNNING,
         error_message=None,
     )

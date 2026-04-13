@@ -1,4 +1,5 @@
 from unittest.mock import AsyncMock
+
 import pytest
 
 from src.infrastructure.events_provider.paginator import EventsPaginator
