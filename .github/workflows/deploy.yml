@@ -22,8 +22,25 @@ jobs:
       - name: Run Ruff
         run: uv run ruff check .
 
-  build:
+  test:
     needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        run: uv run pytest -q --disable-warnings --maxfail=1
+
+  build:
+    needs: [lint, test]
     runs-on: ubuntu-latest
 
     outputs:
@@ -59,7 +76,7 @@ jobs:
           tags: ghcr.io/${{ steps.repo.outputs.repo }}:${{ github.sha }}
 
   deploy:
-    needs: [lint, build]
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
