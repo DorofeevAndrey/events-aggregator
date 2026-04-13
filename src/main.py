@@ -12,8 +12,9 @@ app = FastAPI(lifespan=lifespan)
 
 api_router = APIRouter(prefix="/api")
 
-api_router.include_router(sync_router)
 api_router.include_router(health_router)
+api_router.include_router(sync_router)
+
 api_router.include_router(events_router)
 
 app.include_router(api_router)
