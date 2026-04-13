@@ -21,7 +21,7 @@ class SeatsService:
         self._client = client
         self._events_repository = events_repository
 
-    async def get_seats(self, event_id: UUID) -> dict[str, list[str]]:
+    async def get_seats(self, event_id: UUID):
         event = await self._events_repository.get_by_id(event_id=event_id)
 
         if event is None:
@@ -36,10 +36,10 @@ class SeatsService:
         cached = _SEATS_CACHE.get(event_id)
         now = monotonic()
         if cached is not None and now - cached[0] < _SEATS_CACHE_TTL_SECONDS:
-            return {"seats": cached[1]}
+            return {"event_id": str(event_id), "available_seats": cached[1]}
 
         response = await self._client.seats(event_id=event_id)
         seats = sorted(response["seats"])
         _SEATS_CACHE[event_id] = (now, seats)
 
-        return {"seats": seats}
+        return {"event_id": str(event_id), "available_seats": seats}

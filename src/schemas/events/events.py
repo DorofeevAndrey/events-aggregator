@@ -41,4 +41,5 @@ class EventListResponseSchema(BaseModel):
 
 
 class EventSeatsResponseSchema(BaseModel):
-    seats: list[str]
+    event_id: str
+    available_seats: list[str]
