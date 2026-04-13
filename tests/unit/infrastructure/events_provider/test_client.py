@@ -51,3 +51,25 @@ async def test_events_sends_cursor():
             url="/api/events/",
             params={"changed_at": "2000-01-01", "cursor": "abc"},
         )
+
+
+@pytest.mark.asyncio
+async def test_events_raises_http_error():
+    mock_response = Mock()
+    mock_response.status_code = 500
+    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+        message="boom",
+        request=Mock(),
+        response=mock_response,
+    )
+
+    with patch(
+        "src.infrastructure.events_provider.client.httpx.AsyncClient"
+    ) as mock_async_client:
+        mock_client = mock_async_client.return_value
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        client = EventsProviderClient("https://example.com", "api-key")
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await client.events(changed_at="2000-01-01")

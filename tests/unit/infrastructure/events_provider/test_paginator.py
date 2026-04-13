@@ -59,3 +59,20 @@ async def test_paginator_yields_all_events():
         changed_at="2000-01-01",
         cursor="abc",
     )
+
+
+@pytest.mark.asyncio
+async def test_paginator_stops_on_empty_page():
+    client = AsyncMock()
+    client.events = AsyncMock(
+        return_value={"next": None, "previous": None, "results": []}
+    )
+
+    paginator = EventsPaginator(client, changed_at="2000-01-01")
+
+    events = []
+    async for event in paginator:
+        events.append(event)
+
+    assert events == []
+    client.events.assert_awaited_once_with(changed_at="2000-01-01", cursor=None)
