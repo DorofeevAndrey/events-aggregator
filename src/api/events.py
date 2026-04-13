@@ -40,7 +40,7 @@ async def get_event(event_id: UUID, session: AsyncSession = Depends(get_db_sessi
     return await service.get_event(event_id=event_id)
 
 
-@router.get("/events/{event_id}/seats/", response_model=EventSeatsResponseSchema)
+@router.get("/events/{event_id}/seats", response_model=EventSeatsResponseSchema)
 async def get_seats(event_id: UUID, session: AsyncSession = Depends(get_db_session)):
     settings = get_settings()
 
