@@ -95,6 +95,18 @@ class TicketsService:
                 status_code=400, detail="Ticket not synced with provider"
             )
 
+        event = await self._event_repository.get_by_id(event_id=ticket.event_id)
+
+        if event is None:
+            raise HTTPException(
+                status_code=400, detail="Event with current ticket not found"
+            )
+
+        if event.event_time < datetime.now(UTC):
+            raise HTTPException(
+                status_code=400, detail="Cannot cancel after event has passed"
+            )
+
         try:
             response = await self._client.delete_ticket(
                 event_id=ticket.event_id,
