@@ -5,17 +5,16 @@ import httpx
 from fastapi import HTTPException
 
 from src.application.ports.events import EventRepositoryPort
-from src.application.ports.tickets import EventsProviderClientPort
+from src.application.ports.tickets import EventProviderClientPort, TicketRepositoryPort
 from src.db.models.tickets import Ticket
-from src.repositories.ticket_repository import TicketRepository
 
 
 class TicketsService:
     def __init__(
         self,
-        client: EventsProviderClientPort,
+        client: EventProviderClientPort,
         event_repository: EventRepositoryPort,
-        ticket_repository: TicketRepository,
+        ticket_repository: TicketRepositoryPort,
     ):
         self._client = client
         self._event_repository = event_repository
@@ -35,24 +34,15 @@ class TicketsService:
         if event.registration_deadline < datetime.now(UTC):
             raise HTTPException(status_code=400, detail="Registration is closed")
 
-        existing_ticket = await self._ticket_repository.get_by_event_and_email(
-            event_id=event_id,
+        existing_email = await self._ticket_repository.get_by_email(
             email=email,
         )
 
-        if existing_ticket is not None:
+        if existing_email is not None:
             raise HTTPException(
                 status_code=400,
-                detail="This email is already register for this event",
+                detail="This email is already register",
             )
-
-        seat_ticket = await self._ticket_repository.get_by_event_and_seat(
-            event_id=event_id,
-            seat=seat,
-        )
-
-        if seat_ticket is not None:
-            raise HTTPException(status_code=400, detail="Seat is unavailable")
 
         seats_data = await self._client.seats(event_id)
 
@@ -71,7 +61,11 @@ class TicketsService:
             )
         except httpx.HTTPStatusError as error:
             if error.response.status_code == 400:
-                raise HTTPException(status_code=400, detail="Seat is unavailable")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Seat is unavailable",
+                ) from error
+
             raise
 
         ticket = Ticket(

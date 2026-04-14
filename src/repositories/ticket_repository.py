@@ -1,6 +1,4 @@
-from uuid import UUID
-
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.models.tickets import Ticket
@@ -10,13 +8,8 @@ class TicketRepository:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get_by_event_and_email(self, event_id: UUID, email: str) -> Ticket | None:
-        query = select(Ticket).where(Ticket.event_id == event_id, Ticket.email == email)
-        result = await self._session.execute(query)
-        return result.scalar_one_or_none()
-
-    async def get_by_event_and_seat(self, event_id: UUID, seat: str) -> Ticket | None:
-        query = select(Ticket).where(Ticket.event_id == event_id, Ticket.seat == seat)
+    async def get_by_email(self, email: str) -> Ticket | None:
+        query = select(Ticket).where(Ticket.email == email)
         result = await self._session.execute(query)
         return result.scalar_one_or_none()
 

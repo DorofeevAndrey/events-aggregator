@@ -1,8 +1,8 @@
 """add tickets table
 
-Revision ID: 99e30667f2d3
+Revision ID: 20fb086c4ece
 Revises: c4cea4f8b589
-Create Date: 2026-04-14 17:04:30.973034
+Create Date: 2026-04-14 18:18:00.501473
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '99e30667f2d3'
+revision: str = '20fb086c4ece'
 down_revision: Union[str, Sequence[str], None] = 'c4cea4f8b589'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,8 +32,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['event_id'], ['events.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('event_id', 'email', name='uq_tickets_event_id_email'),
-    sa.UniqueConstraint('event_id', 'seat', name='uq_tickets_event_id_seat')
+    sa.UniqueConstraint('email', name='uq_tickets_email')
     )
     op.create_index(op.f('ix_tickets_email'), 'tickets', ['email'], unique=False)
     op.create_index(op.f('ix_tickets_event_id'), 'tickets', ['event_id'], unique=False)

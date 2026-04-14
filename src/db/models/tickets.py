@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Uuid, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base
@@ -9,10 +9,7 @@ from src.db.base import Base
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    __table_args__ = (
-        UniqueConstraint("event_id", "email", name="uq_tickets_event_id_email"),
-        UniqueConstraint("event_id", "seat", name="uq_tickets_event_id_seat"),
-    )
+    __table_args__ = (UniqueConstraint("email", name="uq_tickets_email"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
