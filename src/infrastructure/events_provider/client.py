@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -8,12 +9,56 @@ logger = logging.getLogger(__name__)
 
 
 class EventsProviderClient:
+    _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+    _MAX_RETRIES = 3
+
     def __init__(self, base_url: str, api_key: str, timeout: float = 10.0):
         self._client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             headers={"x-api-key": api_key},
             timeout=timeout,
         )
+
+    def _should_retry(self, error: httpx.HTTPStatusError | httpx.RequestError) -> bool:
+        if isinstance(error, httpx.RequestError):
+            return True
+
+        return error.response.status_code in self._RETRYABLE_STATUS_CODES
+
+    async def _sleep_before_retry(self, attempt: int) -> None:
+        await asyncio.sleep(0.5 * (2 ** (attempt - 1)))
+
+    async def _get_with_retry(
+        self, url: str, params: dict[str, str] | None = None
+    ) -> httpx.Response:
+        last_error: Exception | None = None
+
+        for attempt in range(1, self._MAX_RETRIES + 1):
+            try:
+                response = await self._client.get(url=url, params=params)
+                response.raise_for_status()
+                return response
+            except (httpx.RequestError, httpx.HTTPStatusError) as error:
+                last_error = error
+
+                if attempt == self._MAX_RETRIES or not self._should_retry(error):
+                    raise
+
+                logger.warning(
+                    "Events API request failed, retrying",
+                    extra={
+                        "attempt": attempt,
+                        "max_retries": self._MAX_RETRIES,
+                        "url": url,
+                        "status_code": getattr(
+                            getattr(error, "response", None), "status_code", None
+                        ),
+                    },
+                )
+                await self._sleep_before_retry(attempt)
+
+        assert last_error is not None
+        raise last_error
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -32,8 +77,7 @@ class EventsProviderClient:
             params["cursor"] = cursor
 
         try:
-            response = await self._client.get(url="/api/events/", params=params)
-            response.raise_for_status()
+            response = await self._get_with_retry(url="/api/events/", params=params)
         except httpx.HTTPStatusError as e:
             logger.error(
                 "Events API returned error",
