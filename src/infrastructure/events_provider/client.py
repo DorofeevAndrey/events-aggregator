@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -45,7 +46,7 @@ class EventsProviderClient:
 
         return response.json()
 
-    async def seats(self, event_id: str) -> dict[str, Any]:
+    async def seats(self, event_id: UUID) -> dict[str, Any]:
         try:
             response = await self._client.get(url=f"/api/events/{event_id}/seats/")
             response.raise_for_status()
@@ -55,6 +56,33 @@ class EventsProviderClient:
                 extra={
                     "status_code": e.response.status_code,
                     "event_id": event_id,
+                },
+            )
+            raise
+
+        return response.json()
+
+    async def create_ticket(
+        self, event_id: UUID, first_name: str, last_name: str, email: str, seat: str
+    ) -> dict[str, str]:
+        payload = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "seat": seat,
+        }
+        try:
+            response = await self._client.post(
+                url=f"/api/events/{event_id}/register/", json=payload
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "Create ticket failed",
+                extra={
+                    "status_code": e.response.status_code,
+                    "event_id": event_id,
+                    "response_text": e.response.text,
                 },
             )
             raise

@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from src.db.models.events import Event
@@ -16,4 +16,4 @@ class EventRepositoryPort(Protocol):
 
 
 class EventsProviderSeatsClientPort(Protocol):
-    async def seats(self, event_id: UUID) -> dict: ...
+    async def seats(self, event_id: str) -> dict[str, Any]: ...
