@@ -81,3 +81,40 @@ class TicketsService:
         await self._ticket_repository.create(ticket)
 
         return response
+
+    async def delete_ticket(self, ticket_id: UUID) -> dict[str, bool]:
+        ticket = await self._ticket_repository.get_by_provider_ticket_id(
+            ticket_id=ticket_id
+        )
+
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+
+        if ticket.provider_ticket_id is None:
+            raise HTTPException(
+                status_code=400, detail="Ticket not synced with provider"
+            )
+
+        try:
+            response = await self._client.delete_ticket(
+                event_id=ticket.event_id,
+                ticket_id=ticket.provider_ticket_id,
+            )
+
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Can't delete ticket",
+                ) from error
+
+            raise
+
+        if response.get("success") is not True:
+            raise HTTPException(
+                status_code=502, detail="Provider did not confirm delete"
+            )
+
+        await self._ticket_repository.delete_by_provider_ticket_id(ticket_id=ticket_id)
+
+        return {"success": True}
