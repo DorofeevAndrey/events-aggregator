@@ -132,3 +132,22 @@ class EventsProviderClient:
             raise
 
         return response.json()
+
+    async def delete_ticket(self, event_id: UUID, ticket_id: UUID) -> dict[str, str]:
+        try:
+            payload: dict[str, str] = {"ticket_id": str(ticket_id)}
+            response = await self._client.request(
+                "DELETE", url=f"/api/events/{event_id}/unregister/", json=payload
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                "Delete ticket failed",
+                extra={
+                    "status_code": e.response.status_code,
+                    "event_id": event_id,
+                },
+            )
+            raise
+
+        return response.json()

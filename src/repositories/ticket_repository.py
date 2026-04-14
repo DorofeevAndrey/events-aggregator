@@ -20,3 +20,19 @@ class TicketRepository:
         await self._session.commit()
         await self._session.refresh(ticket)
         return ticket
+
+    async def get_by_provider_ticket_id(self, ticket_id: UUID) -> Ticket | None:
+        query = select(Ticket).where(Ticket.provider_ticket_id == ticket_id)
+        result = await self._session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def delete_by_provider_ticket_id(self, ticket_id: UUID) -> bool:
+        ticket = await self.get_by_provider_ticket_id(ticket_id)
+
+        if not ticket:
+            return False
+
+        await self._session.delete(ticket)
+        await self._session.commit()
+
+        return True
