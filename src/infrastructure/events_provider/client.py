@@ -136,8 +136,8 @@ class EventsProviderClient:
     async def delete_ticket(self, event_id: UUID, ticket_id: UUID) -> dict[str, str]:
         try:
             payload: dict[str, str] = {"ticket_id": str(ticket_id)}
-            response = await self._client.delete(
-                url=f"/api/events/{event_id}/unregister/", json=payload
+            response = await self._client.request(
+                "DELETE", url=f"/api/events/{event_id}/unregister/", json=payload
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as e:

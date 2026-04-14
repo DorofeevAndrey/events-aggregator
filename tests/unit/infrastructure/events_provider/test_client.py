@@ -157,7 +157,7 @@ async def test_delete_ticket_returns_json_and_sends_payload():
         "src.infrastructure.events_provider.client.httpx.AsyncClient"
     ) as mock_async_client:
         mock_client = mock_async_client.return_value
-        mock_client.delete = AsyncMock(return_value=mock_response)
+        mock_client.request = AsyncMock(return_value=mock_response)
 
         client = EventsProviderClient("https://example.com", "api-key")
 
@@ -167,7 +167,9 @@ async def test_delete_ticket_returns_json_and_sends_payload():
         )
 
         assert result == {"success": True}
-        mock_client.delete.assert_awaited_once_with(
+
+        mock_client.request.assert_awaited_once_with(
+            "DELETE",
             url="/api/events/550e8400-e29b-41d4-a716-446655440000/unregister/",
             json={"ticket_id": "1fed0122-b675-42e2-8ae7-49bfb53e8d7f"},
         )
