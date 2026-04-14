@@ -6,6 +6,7 @@ from src.core.config import get_settings
 from src.db.session import get_db_session
 from src.infrastructure.events_provider.client import EventsProviderClient
 from src.repositories.event_repository import EventRepository
+from src.repositories.ticket_repository import TicketRepository
 from src.schemas.tickets.ticket_request import TicketRequestSchema
 from src.schemas.tickets.ticket_response import TicketResponseSchema
 
@@ -25,6 +26,7 @@ async def create_ticket(
         service = TicketsService(
             client=client,
             event_repository=EventRepository(session=session),
+            ticket_repository=TicketRepository(session=session),
         )
         return await service.create_ticket(
             event_id=params.event_id,

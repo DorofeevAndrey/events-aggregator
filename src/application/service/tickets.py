@@ -43,7 +43,7 @@ class TicketsService:
         if existing_ticket is not None:
             raise HTTPException(
                 status_code=400,
-                detail="This email is already registered for this event",
+                detail="This email is already register for this event",
             )
 
         seat_ticket = await self._ticket_repository.get_by_event_and_seat(
