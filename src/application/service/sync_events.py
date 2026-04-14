@@ -6,7 +6,6 @@ from src.application.ports.sync_events import (
     PlaceRepositoryPort,
     SyncStateRepositoryPort,
 )
-from src.infrastructure.events_provider.paginator import EventsPaginator
 
 
 class SyncEventsService:

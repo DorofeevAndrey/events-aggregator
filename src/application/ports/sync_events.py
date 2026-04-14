@@ -1,4 +1,5 @@
-from typing import Any, AsyncIterator, Protocol
+from collections.abc import AsyncIterator
+from typing import Any, Protocol
 
 from src.db.models.events import Event
 from src.db.models.places import Place
