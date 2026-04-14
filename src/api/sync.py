@@ -8,6 +8,7 @@ from src.infrastructure.events_provider.client import EventsProviderClient
 from src.repositories.event_repository import EventRepository
 from src.repositories.place_repository import PlaceRepository
 from src.repositories.sync_state_repository import SyncStateRepository
+from src.infrastructure.events_provider.paginator import EventsPaginator
 
 router = APIRouter()
 
@@ -21,6 +22,7 @@ async def sync_trigger(session: AsyncSession = Depends(get_db_session)):
     ) as client:
         service = SyncEventsService(
             client=client,
+            client_paginator=EventsPaginator,
             place_repository=PlaceRepository(session),
             event_repository=EventRepository(session),
             sync_state_repository=SyncStateRepository(session),
