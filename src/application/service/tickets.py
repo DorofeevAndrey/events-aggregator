@@ -34,14 +34,15 @@ class TicketsService:
         if event.registration_deadline < datetime.now(UTC):
             raise HTTPException(status_code=400, detail="Registration is closed")
 
-        existing_email = await self._ticket_repository.get_by_email(
+        existing_email = await self._ticket_repository.get_by_event_and_email(
+            event_id=event_id,
             email=email,
         )
 
         if existing_email is not None:
             raise HTTPException(
                 status_code=400,
-                detail="This email is already register",
+                detail="This email is already registered for this event",
             )
 
         seats_data = await self._client.seats(event_id)

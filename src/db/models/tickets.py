@@ -9,7 +9,9 @@ from src.db.base import Base
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    __table_args__ = (UniqueConstraint("email", name="uq_tickets_email"),)
+    __table_args__ = (
+        UniqueConstraint("event_id", "email", name="uq_tickets_event_id_email"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(

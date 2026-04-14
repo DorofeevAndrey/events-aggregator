@@ -13,6 +13,8 @@ class EventProviderClientPort(Protocol):
 
 
 class TicketRepositoryPort(Protocol):
-    async def get_by_email(self, email: str) -> Ticket | None: ...
+    async def get_by_event_and_email(
+        self, event_id: UUID, email: str
+    ) -> Ticket | None: ...
 
     async def create(self, ticket: Ticket) -> Ticket: ...
