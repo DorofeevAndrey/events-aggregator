@@ -5,10 +5,10 @@ from src.application.service.sync_events import SyncEventsService
 from src.core.config import get_settings
 from src.db.session import get_db_session
 from src.infrastructure.events_provider.client import EventsProviderClient
+from src.infrastructure.events_provider.paginator import EventsPaginator
 from src.repositories.event_repository import EventRepository
 from src.repositories.place_repository import PlaceRepository
 from src.repositories.sync_state_repository import SyncStateRepository
-from src.infrastructure.events_provider.paginator import EventsPaginator
 
 router = APIRouter()
 
