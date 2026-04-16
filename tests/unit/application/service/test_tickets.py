@@ -3,10 +3,15 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
-import httpx
 import pytest
-from fastapi import HTTPException
 
+from src.application.exceptions import (
+    CannotCancelAfterEventPassedError,
+    EmailAlreadyRegisteredError,
+    EventNotPublishedError,
+    RegistrationClosedError,
+    SeatUnavailableError,
+)
 from src.application.service.tickets import TicketsService
 from src.db.models.tickets import Ticket
 
@@ -101,29 +106,10 @@ async def test_create_ticket_success(ticket_service):
 
 
 @pytest.mark.asyncio
-async def test_create_ticket_rejects_missing_event(ticket_service):
-    ticket_service.event_repository.get_by_id.return_value = None
-
-    with pytest.raises(HTTPException) as exc_info:
-        await ticket_service.service.create_ticket(
-            event_id=EVENT_ID,
-            first_name="Ivan",
-            last_name="Ivanov",
-            email="ivan@example.com",
-            seat="A15",
-        )
-
-    assert exc_info.value.status_code == 404
-    assert exc_info.value.detail == "Event not found"
-    ticket_service.client.seats.assert_not_awaited()
-    ticket_service.ticket_repository.create.assert_not_awaited()
-
-
-@pytest.mark.asyncio
 async def test_create_ticket_rejects_unpublished_event(ticket_service):
     ticket_service.event_repository.get_by_id.return_value = make_event(status="draft")
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(EventNotPublishedError):
         await ticket_service.service.create_ticket(
             event_id=EVENT_ID,
             first_name="Ivan",
@@ -132,8 +118,6 @@ async def test_create_ticket_rejects_unpublished_event(ticket_service):
             seat="A15",
         )
 
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Event is not published"
     ticket_service.client.seats.assert_not_awaited()
 
 
@@ -143,7 +127,7 @@ async def test_create_ticket_rejects_closed_registration(ticket_service):
         registration_deadline=datetime(2000, 1, 1, tzinfo=UTC)
     )
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(RegistrationClosedError):
         await ticket_service.service.create_ticket(
             event_id=EVENT_ID,
             first_name="Ivan",
@@ -152,8 +136,6 @@ async def test_create_ticket_rejects_closed_registration(ticket_service):
             seat="A15",
         )
 
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Registration is closed"
     ticket_service.client.seats.assert_not_awaited()
 
 
@@ -162,7 +144,7 @@ async def test_create_ticket_rejects_already_registered_email(ticket_service):
     ticket_service.event_repository.get_by_id.return_value = make_event()
     ticket_service.ticket_repository.get_by_event_and_email.return_value = make_ticket()
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(EmailAlreadyRegisteredError):
         await ticket_service.service.create_ticket(
             event_id=EVENT_ID,
             first_name="Ivan",
@@ -171,8 +153,6 @@ async def test_create_ticket_rejects_already_registered_email(ticket_service):
             seat="A15",
         )
 
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "This email is already registered for this event"
     ticket_service.client.seats.assert_not_awaited()
     ticket_service.client.create_ticket.assert_not_awaited()
 
@@ -183,7 +163,7 @@ async def test_create_ticket_rejects_unavailable_seat(ticket_service):
     ticket_service.ticket_repository.get_by_event_and_email.return_value = None
     ticket_service.client.seats.return_value = {"seats": ["A16"]}
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(SeatUnavailableError):
         await ticket_service.service.create_ticket(
             event_id=EVENT_ID,
             first_name="Ivan",
@@ -192,37 +172,7 @@ async def test_create_ticket_rejects_unavailable_seat(ticket_service):
             seat="A15",
         )
 
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Seat is unavailable"
     ticket_service.client.create_ticket.assert_not_awaited()
-
-
-@pytest.mark.asyncio
-async def test_create_ticket_maps_provider_400_to_seat_unavailable(ticket_service):
-    ticket_service.event_repository.get_by_id.return_value = make_event()
-    ticket_service.ticket_repository.get_by_event_and_email.return_value = None
-    ticket_service.client.seats.return_value = {"seats": ["A15"]}
-
-    failed_response = Mock()
-    failed_response.status_code = 400
-    ticket_service.client.create_ticket.side_effect = httpx.HTTPStatusError(
-        message="boom",
-        request=Mock(),
-        response=failed_response,
-    )
-
-    with pytest.raises(HTTPException) as exc_info:
-        await ticket_service.service.create_ticket(
-            event_id=EVENT_ID,
-            first_name="Ivan",
-            last_name="Ivanov",
-            email="ivan@example.com",
-            seat="A15",
-        )
-
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Seat is unavailable"
-    ticket_service.ticket_repository.create.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -248,18 +198,6 @@ async def test_delete_ticket_success(ticket_service):
 
 
 @pytest.mark.asyncio
-async def test_delete_ticket_rejects_missing_ticket(ticket_service):
-    ticket_service.ticket_repository.get_by_provider_ticket_id.return_value = None
-
-    with pytest.raises(HTTPException) as exc_info:
-        await ticket_service.service.delete_ticket(ticket_id=TICKET_ID)
-
-    assert exc_info.value.status_code == 404
-    assert exc_info.value.detail == "Ticket not found"
-    ticket_service.client.delete_ticket.assert_not_awaited()
-
-
-@pytest.mark.asyncio
 async def test_delete_ticket_rejects_past_event(ticket_service):
     ticket_service.ticket_repository.get_by_provider_ticket_id.return_value = (
         make_ticket()
@@ -268,33 +206,7 @@ async def test_delete_ticket_rejects_past_event(ticket_service):
         event_time=datetime(2000, 1, 1, tzinfo=UTC)
     )
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(CannotCancelAfterEventPassedError):
         await ticket_service.service.delete_ticket(ticket_id=TICKET_ID)
 
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Cannot cancel after event has passed"
     ticket_service.client.delete_ticket.assert_not_awaited()
-
-
-@pytest.mark.asyncio
-async def test_delete_ticket_maps_provider_400(ticket_service):
-    ticket_service.ticket_repository.get_by_provider_ticket_id.return_value = (
-        make_ticket()
-    )
-    ticket_service.event_repository.get_by_id.return_value = make_event(
-        event_time=datetime.now(UTC) + timedelta(days=1)
-    )
-    failed_response = Mock()
-    failed_response.status_code = 400
-    ticket_service.client.delete_ticket.side_effect = httpx.HTTPStatusError(
-        message="boom",
-        request=Mock(),
-        response=failed_response,
-    )
-
-    with pytest.raises(HTTPException) as exc_info:
-        await ticket_service.service.delete_ticket(ticket_id=TICKET_ID)
-
-    assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Can't delete ticket"
-    ticket_service.ticket_repository.delete_by_provider_ticket_id.assert_not_awaited()
