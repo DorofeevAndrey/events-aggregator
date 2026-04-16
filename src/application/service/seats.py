@@ -6,6 +6,7 @@ from src.application.ports.events import (
     EventRepositoryPort,
     EventsProviderSeatsClientPort,
 )
+from src.schemas.events.event_status import EventStatus
 
 _SEATS_CACHE: dict[UUID, tuple[float, list[str]]] = {}
 _SEATS_CACHE_TTL_SECONDS = 30.0
@@ -26,7 +27,7 @@ class SeatsService:
         if event is None:
             raise EventNotFoundError()
 
-        if event.status != "published":
+        if event.status != EventStatus.PUBLISHED:
             raise EventNotPublishedError()
 
         cached = _SEATS_CACHE.get(event_id)

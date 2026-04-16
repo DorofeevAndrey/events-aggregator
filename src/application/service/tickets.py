@@ -19,6 +19,7 @@ from src.application.exceptions import (
 from src.application.ports.events import EventRepositoryPort
 from src.application.ports.tickets import EventProviderClientPort, TicketRepositoryPort
 from src.db.models.tickets import Ticket
+from src.schemas.events.event_status import EventStatus
 
 
 class TicketsService:
@@ -40,7 +41,7 @@ class TicketsService:
         if not event:
             raise EventNotFoundError()
 
-        if event.status != "published":
+        if event.status != EventStatus.PUBLISHED:
             raise EventNotPublishedError()
 
         if event.registration_deadline < datetime.now(UTC):

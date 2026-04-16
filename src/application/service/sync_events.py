@@ -41,7 +41,9 @@ class SyncEventsService:
 
             async for provider_event in paginator:
                 await self._place_repository.upsert(build_place_model(provider_event))
-                await self._event_repository.upsert(build_event_model(provider_event))
+                event = build_event_model(provider_event)
+                if event is not None:
+                    await self._event_repository.upsert(event)
 
                 if max_changed_at is None or provider_event.changed_at > max_changed_at:
                     max_changed_at = provider_event.changed_at
