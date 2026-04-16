@@ -2,8 +2,20 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import httpx
-from fastapi import HTTPException
 
+from src.application.exceptions import (
+    CannotCancelAfterEventPassedError,
+    EmailAlreadyRegisteredError,
+    EventNotFoundError,
+    EventNotPublishedError,
+    ProviderDidNotConfirmDeleteError,
+    RegistrationClosedError,
+    SeatUnavailableError,
+    TicketDeletionRejectedError,
+    TicketEventNotFoundError,
+    TicketNotFoundError,
+    TicketNotSyncedWithProviderError,
+)
 from src.application.ports.events import EventRepositoryPort
 from src.application.ports.tickets import EventProviderClientPort, TicketRepositoryPort
 from src.db.models.tickets import Ticket
@@ -26,13 +38,13 @@ class TicketsService:
         event = await self._event_repository.get_by_id(event_id=event_id)
 
         if not event:
-            raise HTTPException(status_code=404, detail="Event not found")
+            raise EventNotFoundError()
 
         if event.status != "published":
-            raise HTTPException(status_code=400, detail="Event is not published")
+            raise EventNotPublishedError()
 
         if event.registration_deadline < datetime.now(UTC):
-            raise HTTPException(status_code=400, detail="Registration is closed")
+            raise RegistrationClosedError()
 
         existing_email = await self._ticket_repository.get_by_event_and_email(
             event_id=event_id,
@@ -40,17 +52,14 @@ class TicketsService:
         )
 
         if existing_email is not None:
-            raise HTTPException(
-                status_code=400,
-                detail="This email is already registered for this event",
-            )
+            raise EmailAlreadyRegisteredError()
 
         seats_data = await self._client.seats(event_id)
 
         available_seats = set(seats_data["seats"])
 
         if seat not in available_seats:
-            raise HTTPException(status_code=400, detail="Seat is unavailable")
+            raise SeatUnavailableError()
 
         try:
             response = await self._client.create_ticket(
@@ -62,10 +71,7 @@ class TicketsService:
             )
         except httpx.HTTPStatusError as error:
             if error.response.status_code == 400:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Seat is unavailable",
-                ) from error
+                raise SeatUnavailableError() from error
 
             raise
 
@@ -88,24 +94,18 @@ class TicketsService:
         )
 
         if ticket is None:
-            raise HTTPException(status_code=404, detail="Ticket not found")
+            raise TicketNotFoundError()
 
         if ticket.provider_ticket_id is None:
-            raise HTTPException(
-                status_code=400, detail="Ticket not synced with provider"
-            )
+            raise TicketNotSyncedWithProviderError()
 
         event = await self._event_repository.get_by_id(event_id=ticket.event_id)
 
         if event is None:
-            raise HTTPException(
-                status_code=400, detail="Event with current ticket not found"
-            )
+            raise TicketEventNotFoundError()
 
         if event.event_time < datetime.now(UTC):
-            raise HTTPException(
-                status_code=400, detail="Cannot cancel after event has passed"
-            )
+            raise CannotCancelAfterEventPassedError()
 
         try:
             response = await self._client.delete_ticket(
@@ -115,17 +115,12 @@ class TicketsService:
 
         except httpx.HTTPStatusError as error:
             if error.response.status_code == 400:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Can't delete ticket",
-                ) from error
+                raise TicketDeletionRejectedError() from error
 
             raise
 
         if response.get("success") is not True:
-            raise HTTPException(
-                status_code=502, detail="Provider did not confirm delete"
-            )
+            raise ProviderDidNotConfirmDeleteError()
 
         await self._ticket_repository.delete_by_provider_ticket_id(ticket_id=ticket_id)
 

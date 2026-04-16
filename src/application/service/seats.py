@@ -1,8 +1,7 @@
 from time import monotonic
 from uuid import UUID
 
-from fastapi import HTTPException
-
+from src.application.exceptions import EventNotFoundError, EventNotPublishedError
 from src.application.ports.events import (
     EventRepositoryPort,
     EventsProviderSeatsClientPort,
@@ -25,13 +24,10 @@ class SeatsService:
         event = await self._events_repository.get_by_id(event_id=event_id)
 
         if event is None:
-            raise HTTPException(status_code=404, detail="Event not found")
+            raise EventNotFoundError()
 
         if event.status != "published":
-            raise HTTPException(
-                status_code=400,
-                detail="Event is not published",
-            )
+            raise EventNotPublishedError()
 
         cached = _SEATS_CACHE.get(event_id)
         now = monotonic()
