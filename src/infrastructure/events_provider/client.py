@@ -28,14 +28,17 @@ class EventsProviderClient:
     async def _sleep_before_retry(self, attempt: int) -> None:
         await asyncio.sleep(0.5 * (2 ** (attempt - 1)))
 
-    async def _get_with_retry(
-        self, url: str, params: dict[str, str] | None = None
+    async def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        **request_kwargs: Any,
     ) -> httpx.Response:
         last_error: Exception | None = None
 
         for attempt in range(1, self._MAX_RETRIES + 1):
             try:
-                response = await self._client.get(url=url, params=params)
+                response = await self._client.request(method, url=url, **request_kwargs)
                 response.raise_for_status()
                 return response
             except (httpx.RequestError, httpx.HTTPStatusError) as error:
@@ -77,7 +80,9 @@ class EventsProviderClient:
             params["cursor"] = cursor
 
         try:
-            response = await self._get_with_retry(url="/api/events/", params=params)
+            response = await self._request_with_retry(
+                "GET", url="/api/events/", params=params
+            )
         except httpx.HTTPStatusError as e:
             logger.error(
                 "Events API returned error",
@@ -92,8 +97,9 @@ class EventsProviderClient:
 
     async def seats(self, event_id: UUID) -> dict[str, Any]:
         try:
-            response = await self._client.get(url=f"/api/events/{event_id}/seats/")
-            response.raise_for_status()
+            response = await self._request_with_retry(
+                "GET", url=f"/api/events/{event_id}/seats/"
+            )
         except httpx.HTTPStatusError as e:
             logger.error(
                 "Events seats API returned error",
@@ -116,10 +122,9 @@ class EventsProviderClient:
             "seat": seat,
         }
         try:
-            response = await self._client.post(
-                url=f"/api/events/{event_id}/register/", json=payload
+            response = await self._request_with_retry(
+                "POST", url=f"/api/events/{event_id}/register/", json=payload
             )
-            response.raise_for_status()
         except httpx.HTTPStatusError as e:
             logger.error(
                 "Create ticket failed",
@@ -136,10 +141,9 @@ class EventsProviderClient:
     async def delete_ticket(self, event_id: UUID, ticket_id: UUID) -> dict[str, str]:
         try:
             payload: dict[str, str] = {"ticket_id": str(ticket_id)}
-            response = await self._client.request(
+            response = await self._request_with_retry(
                 "DELETE", url=f"/api/events/{event_id}/unregister/", json=payload
             )
-            response.raise_for_status()
         except httpx.HTTPStatusError as e:
             logger.error(
                 "Delete ticket failed",
