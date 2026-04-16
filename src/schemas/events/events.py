@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from src.schemas.events.event_status import EventStatus
+
 
 class PlaceListSchema(BaseModel):
     id: UUID
@@ -23,7 +25,7 @@ class EventListSchema(BaseModel):
     place: PlaceListSchema
     event_time: datetime
     registration_deadline: datetime
-    status: str
+    status: EventStatus
     number_of_visitors: int
 
     model_config = ConfigDict(from_attributes=True)

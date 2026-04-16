@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from src.api.events import router as events_router
+from src.api.exception_handlers import register_exception_handlers
 from src.api.health import router as health_router
 from src.api.sync import router as sync_router
 from src.api.tickets import router as tickets_router
@@ -12,6 +13,7 @@ from src.core.lifespan import lifespan
 logging_config.setup_logging()
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
 
 
 # FastApi not recomented, just for tests on lms

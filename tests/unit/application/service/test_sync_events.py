@@ -167,3 +167,50 @@ async def test_sync_marks_failed_on_error():
             await service.sync()
 
     sync_repo.mark_failed.assert_awaited_once_with("boom")
+
+
+@pytest.mark.asyncio
+async def test_sync_skips_events_with_unknown_status():
+    client = object()
+    provider_event = SimpleNamespace(
+        status="archived",
+        changed_at=datetime(2026, 1, 1, tzinfo=UTC),
+        place=SimpleNamespace(),
+    )
+    sync_state = SimpleNamespace(last_changed_at=None)
+    place_repo = AsyncMock()
+    event_repo = AsyncMock()
+    sync_repo = AsyncMock()
+    sync_repo.get_or_create.return_value = sync_state
+    sync_repo.mark_running = AsyncMock(return_value=sync_state)
+    sync_repo.mark_success = AsyncMock(return_value=sync_state)
+    paginator_factory = Mock(
+        return_value=FakePaginator(
+            client=object(),
+            changed_at="2000-01-01",
+            events=[provider_event],
+        )
+    )
+
+    with (
+        patch(
+            "src.application.service.sync_events.build_place_model",
+            return_value="place",
+        ),
+        patch(
+            "src.application.service.sync_events.build_event_model", return_value=None
+        ),
+    ):
+        service = SyncEventsService(
+            client=client,
+            place_repository=place_repo,
+            event_repository=event_repo,
+            sync_state_repository=sync_repo,
+            client_paginator=paginator_factory,
+        )
+
+        await service.sync()
+
+    place_repo.upsert.assert_awaited_once_with("place")
+    event_repo.upsert.assert_not_awaited()
+    sync_repo.mark_success.assert_awaited_once_with(provider_event.changed_at)

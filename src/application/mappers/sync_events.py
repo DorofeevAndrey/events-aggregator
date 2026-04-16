@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from src.db.models.events import Event
 from src.db.models.places import Place
 from src.db.models.sync_state import SyncState, SyncStatus
+from src.schemas.events.event_status import EventStatus
 from src.schemas.provider.provider_event import ProviderEventSchema
 
 
@@ -18,14 +19,19 @@ def build_place_model(provider_event: ProviderEventSchema) -> Place:
     )
 
 
-def build_event_model(provider_event: ProviderEventSchema) -> Event:
+def build_event_model(provider_event: ProviderEventSchema) -> Event | None:
+    try:
+        status = EventStatus(provider_event.status)
+    except ValueError:
+        return None
+
     return Event(
         id=provider_event.id,
         place_id=provider_event.place.id,
         name=provider_event.name,
         event_time=provider_event.event_time,
         registration_deadline=provider_event.registration_deadline,
-        status=provider_event.status,
+        status=status,
         number_of_visitors=provider_event.number_of_visitors,
         changed_at=provider_event.changed_at,
         created_at=provider_event.created_at,
