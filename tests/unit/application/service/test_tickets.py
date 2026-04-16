@@ -14,6 +14,7 @@ from src.application.exceptions import (
 )
 from src.application.service.tickets import TicketsService
 from src.db.models.tickets import Ticket
+from src.schemas.events.event_status import EventStatus
 
 EVENT_ID = UUID("550e8400-e29b-41d4-a716-446655440000")
 TICKET_ID = UUID("1fed0122-b675-42e2-8ae7-49bfb53e8d7f")
@@ -49,7 +50,9 @@ def ticket_service():
     )
 
 
-def make_event(*, status="published", event_time=None, registration_deadline=None):
+def make_event(
+    *, status=EventStatus.PUBLISHED, event_time=None, registration_deadline=None
+):
     return SimpleNamespace(
         status=status,
         event_time=event_time or (datetime.now(UTC) + timedelta(days=1)),
@@ -107,7 +110,9 @@ async def test_create_ticket_success(ticket_service):
 
 @pytest.mark.asyncio
 async def test_create_ticket_rejects_unpublished_event(ticket_service):
-    ticket_service.event_repository.get_by_id.return_value = make_event(status="draft")
+    ticket_service.event_repository.get_by_id.return_value = make_event(
+        status=EventStatus.DRAFT
+    )
 
     with pytest.raises(EventNotPublishedError):
         await ticket_service.service.create_ticket(
